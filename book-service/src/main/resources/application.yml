@@ -4,6 +4,11 @@ eureka:
   client:
     service-url: 
       defaultZone: http://localhost:8761/eureka
+resilience4j:
+  retry:
+    instances:
+      findBook:
+        max-attempts: 5
 spring:
   application:
     name: book-service
@@ -29,4 +34,6 @@ spring:
     - book_service
     user: root
     password: umasenhaforte123@
-
+springdoc:
+  api-docs:
+    path: /book-service/v3/api-docs

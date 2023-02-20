@@ -1,38 +1,34 @@
 package com.br.pironi.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.br.pironi.model.Book;
-import com.br.pironi.proxy.CambioProxy;
-import com.br.pironi.repository.BookRepository;
+import com.br.pironi.model.BookDetails;
+import com.br.pironi.service.BookService;
 
-import response.Cambio;
-
+import io.github.resilience4j.retry.annotation.Retry;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+@Tag(name = "Book endpoint")
 @RestController
 @RequestMapping("book-service")
 public class BookController {
-	
-	@Autowired
-	Environment enviroment;
-	
-	@Autowired
-	BookRepository repository;
-	
-	@Autowired
-	CambioProxy proxy;
 
+	@Autowired
+	BookService service;
+
+	@Operation(summary = "Find a specific book by a id")
 	@GetMapping("/{id}/{currency}")
-	public Book findBook(@PathVariable("id") Long id, @PathVariable("currency") String currency) {
-		Book book = repository.findById(id).orElseThrow(() -> new RuntimeException("") );
-		Cambio cambio = proxy.getCambio(book.getPrice(), "USD", currency);
-		var port = enviroment.getProperty("local.server.port");
-		book.setEnviroment(port);
-		book.setPrice(cambio.getConvertedValue());
-		return book;
+	@Retry(name = "findBook", fallbackMethod = "requestFailed")
+	public ResponseEntity<BookDetails> findBook(@PathVariable("id") Long id, @PathVariable("currency") String currency) {
+		return ResponseEntity.ok().body(service.searchBook(id, currency));
+	}
+
+	private ResponseEntity<BookDetails> requestFailed(Long id,  String currency, Throwable t) {
+		return ResponseEntity.badRequest().body(new BookDetails());
 	}
 }

@@ -25,3 +25,6 @@ spring:
     - cambio_service
     user: root
     password: umasenhaforte123@
+springdoc:
+  api-docs:
+    path: /cambio-service/v3/api-docs
